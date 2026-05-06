@@ -32,7 +32,7 @@ function ImageThumbnail({ src, alt, visited }: { src: string; alt: string; visit
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         className={[
           "object-cover transition-[opacity,transform] duration-300 motion-reduce:transition-none group-hover:scale-105",
-          visited ? "opacity-70" : "opacity-100",
+          visited ? "opacity-50" : "opacity-100",
           loaded ? "" : "opacity-0",
         ].join(" ")}
         onLoad={() => setLoaded(true)}
@@ -70,7 +70,7 @@ function VideoThumbnail({ src, visited }: { src: string; visited: boolean }) {
         preload="metadata"
         className={[
           "absolute inset-0 h-full w-full object-cover transition-opacity duration-300 motion-reduce:transition-none",
-          visited ? "opacity-70" : "opacity-100",
+          visited ? "opacity-50" : "opacity-100",
           ready ? "" : "opacity-0",
         ].join(" ")}
       />
@@ -100,7 +100,12 @@ export default function ApodCard({ entry, visited }: ApodCardProps) {
     <article>
       <Link
         href={`/apod/${entry.date}`}
-        className="group relative flex flex-col overflow-hidden rounded-xl bg-white shadow transition-shadow hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-gray-900 dark:focus-visible:ring-blue-400"
+        className={[
+          "group relative flex flex-col overflow-hidden rounded-xl shadow transition-shadow hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400",
+          visited
+            ? "bg-indigo-50 ring-1 ring-indigo-200 dark:bg-indigo-950/40 dark:ring-indigo-800"
+            : "bg-white dark:bg-gray-900",
+        ].join(" ")}
       >
         <div className="relative aspect-video w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
 
@@ -124,7 +129,11 @@ export default function ApodCard({ entry, visited }: ApodCardProps) {
           )}
 
           {visited && (
-            <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-xs text-white">
+            <div className="pointer-events-none absolute inset-0 bg-indigo-500/20 dark:bg-indigo-400/15" />
+          )}
+
+          {visited && (
+            <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-indigo-600/90 px-2 py-1 text-xs text-white">
               <CheckIcon />
               <span>Viewed</span>
             </div>
@@ -132,8 +141,10 @@ export default function ApodCard({ entry, visited }: ApodCardProps) {
         </div>
 
         <div className="flex flex-col gap-1 p-3">
-          <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(entry.date)}</p>
-          <h2 className="line-clamp-2 text-sm font-medium text-gray-900 dark:text-white">
+          <p className={["text-xs", visited ? "text-indigo-400 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400"].join(" ")}>
+            {formatDate(entry.date)}
+          </p>
+          <h2 className={["line-clamp-2 text-sm font-medium", visited ? "text-indigo-700 dark:text-indigo-300" : "text-gray-900 dark:text-white"].join(" ")}>
             {entry.title}
           </h2>
         </div>
