@@ -1,30 +1,38 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useVisited } from "@/hooks/useVisited";
 import { useDarkMode } from "@/hooks/useDarkMode";
 
 export default function SettingsMenu() {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const firstItemRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const desktopMenuRef = useRef<HTMLDivElement>(null);
   const { clearAll } = useVisited();
   const { isDark, toggle: toggleDark } = useDarkMode();
 
-  // Focus first item when menu opens
+  // Focus first item when menu opens (preventScroll avoids mobile viewport jump)
   useEffect(() => {
-    if (open) firstItemRef.current?.focus();
+    if (!open) return;
+    const isDesktop = window.matchMedia("(min-width: 640px)").matches;
+    const menu = isDesktop ? desktopMenuRef.current : mobileMenuRef.current;
+    const firstItem = menu?.querySelector<HTMLButtonElement>(
+      "button:not(:disabled)"
+    );
+    firstItem?.focus({ preventScroll: true });
   }, [open]);
 
   // Close on outside click
   useEffect(() => {
     if (!open) return;
     function handle(e: MouseEvent) {
+      const target = e.target as Node;
       if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node) &&
-        !buttonRef.current?.contains(e.target as Node)
+        !mobileMenuRef.current?.contains(target) &&
+        !desktopMenuRef.current?.contains(target) &&
+        !buttonRef.current?.contains(target)
       ) {
         setOpen(false);
       }
@@ -65,69 +73,101 @@ export default function SettingsMenu() {
         <GearIcon />
       </button>
 
-      {/* Mobile overlay backdrop */}
+      {/* Desktop menu */}
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 sm:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      {/* Menu */}
-      {open && (
-        <div
-          ref={menuRef}
+          ref={desktopMenuRef}
           role="menu"
           onKeyDown={handleKeyDown}
-          className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[80dvh] flex-col overflow-y-auto rounded-t-2xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-white/10 dark:bg-gray-900 sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:max-h-none sm:w-56 sm:overflow-visible sm:rounded-xl sm:p-2"
+          className="absolute right-0 top-full z-50 mt-2 hidden w-56 flex-col overflow-visible rounded-xl border border-gray-200 bg-white p-2 shadow-2xl dark:border-white/10 dark:bg-gray-900 sm:flex"
         >
-          {/* Mobile drag handle */}
-          <div className="mx-auto mb-4 h-1 w-12 shrink-0 rounded-full bg-gray-300 dark:bg-gray-600 sm:hidden" />
-
-          {/* Dark mode toggle — stays open */}
-          <div
-            role="menuitem"
-            className="flex w-full items-center justify-between gap-2 rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white min-h-[44px]"
-          >
-            <span className="flex items-center gap-2">
-              {isDark ? <MoonIcon /> : <SunIcon />}
-              Dark mode
-            </span>
-            <button
-              onClick={toggleDark}
-              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              aria-pressed={isDark}
-              className={[
-                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-                isDark
-                  ? "bg-blue-600 focus-visible:ring-offset-gray-900"
-                  : "bg-gray-300 focus-visible:ring-offset-white",
-              ].join(" ")}
-            >
-              <span
-                className={[
-                  "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform",
-                  isDark ? "translate-x-5" : "translate-x-0",
-                ].join(" ")}
-              />
-            </button>
-          </div>
-
-          <div className="my-1 border-t border-gray-100 dark:border-white/10" />
-
-          {/* Clear history */}
-          <button
-            ref={firstItemRef}
-            role="menuitem"
-            onClick={handleClearHistory}
-            className="flex w-full items-center gap-2 rounded-lg px-4 py-3 text-left text-sm text-gray-900 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-white dark:hover:bg-white/10 dark:focus-visible:ring-blue-400 min-h-[44px]"
-          >
-            <TrashIcon />
-            Clear History
-          </button>
+          <MenuItems
+            handleClearHistory={handleClearHistory}
+            isDark={isDark}
+            toggleDark={toggleDark}
+          />
         </div>
       )}
+
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/60 sm:hidden"
+              onClick={() => setOpen(false)}
+            />
+            <div
+              ref={mobileMenuRef}
+              role="menu"
+              onKeyDown={handleKeyDown}
+              className="fixed left-3 right-3 top-[4.75rem] z-50 flex max-h-[calc(100dvh_-_5.5rem)] flex-col overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-2xl dark:border-white/10 dark:bg-gray-900 sm:hidden"
+            >
+              <MenuItems
+                handleClearHistory={handleClearHistory}
+                isDark={isDark}
+                toggleDark={toggleDark}
+              />
+            </div>
+          </>,
+          document.body
+        )}
     </div>
+  );
+}
+
+interface MenuItemsProps {
+  handleClearHistory: () => void;
+  isDark: boolean;
+  toggleDark: () => void;
+}
+
+function MenuItems({
+  handleClearHistory,
+  isDark,
+  toggleDark,
+}: MenuItemsProps) {
+  return (
+    <>
+      {/* Dark mode toggle */}
+      <button
+        role="menuitemcheckbox"
+        aria-checked={isDark}
+        onClick={toggleDark}
+        className="flex min-h-[44px] w-full items-center justify-between gap-2 rounded-lg px-4 py-3 text-left text-sm text-gray-900 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-white dark:hover:bg-white/10 dark:focus-visible:ring-blue-400"
+      >
+        <span className="flex items-center gap-2">
+          {isDark ? <MoonIcon /> : <SunIcon />}
+          Dark mode
+        </span>
+        <span
+          aria-hidden="true"
+          className={[
+            "relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors",
+            isDark ? "bg-blue-600" : "bg-gray-300",
+          ].join(" ")}
+        >
+          <span
+            className={[
+              "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform",
+              isDark ? "translate-x-5" : "translate-x-0",
+            ].join(" ")}
+          />
+        </span>
+      </button>
+
+      <div className="my-1 border-t border-gray-100 dark:border-white/10" />
+
+      {/* Clear history */}
+      <button
+        role="menuitem"
+        onClick={handleClearHistory}
+        className="flex min-h-[44px] w-full items-center gap-2 rounded-lg px-4 py-3 text-left text-sm text-gray-900 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-white dark:hover:bg-white/10 dark:focus-visible:ring-blue-400"
+      >
+        <TrashIcon />
+        Clear History
+      </button>
+    </>
   );
 }
 
