@@ -79,10 +79,10 @@ export default function SettingsMenu() {
           ref={menuRef}
           role="menu"
           onKeyDown={handleKeyDown}
-          className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-white/10 dark:bg-gray-900 sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-56 sm:rounded-xl sm:p-2"
+          className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[80dvh] flex-col overflow-y-auto rounded-t-2xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-white/10 dark:bg-gray-900 sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:max-h-none sm:w-56 sm:overflow-visible sm:rounded-xl sm:p-2"
         >
           {/* Mobile drag handle */}
-          <div className="mx-auto mb-4 h-1 w-12 rounded-full bg-gray-300 dark:bg-gray-600 sm:hidden" />
+          <div className="mx-auto mb-4 h-1 w-12 shrink-0 rounded-full bg-gray-300 dark:bg-gray-600 sm:hidden" />
 
           {/* Dark mode toggle — stays open */}
           <div
