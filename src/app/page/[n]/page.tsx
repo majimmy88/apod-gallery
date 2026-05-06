@@ -1,13 +1,30 @@
+import { notFound } from "next/navigation";
 import { getApods } from "@/lib/apod";
 import { dateRangeForPage, maxPage, todayIso } from "@/lib/dates";
 import ApodGrid from "@/components/ApodGrid";
 import Pagination from "@/components/Pagination";
 
-export default async function HomePage() {
+interface Props {
+  params: Promise<{ n: string }>;
+}
+
+export default async function ArchivePage({ params }: Props) {
+  const { n } = await params;
+  const page = parseInt(n, 10);
+
+  if (!Number.isFinite(page) || page < 2) {
+    notFound();
+  }
+
   const today = todayIso();
-  const { startDate, endDate } = dateRangeForPage(1, today);
-  const entries = await getApods(startDate, endDate);
   const total = maxPage(today);
+
+  if (page > total) {
+    notFound();
+  }
+
+  const { startDate, endDate } = dateRangeForPage(page, today);
+  const entries = await getApods(startDate, endDate);
 
   return (
     <main
@@ -28,7 +45,7 @@ export default async function HomePage() {
 
       <div className="mt-8">
         <Pagination
-          currentPage={1}
+          currentPage={page}
           maxPage={total}
           startDate={startDate}
           endDate={endDate}
